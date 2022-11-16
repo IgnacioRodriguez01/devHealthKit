@@ -1,0 +1,66 @@
+:root {
+    background-color: #26262f;
+}
+* {
+    color: white;
+    font-family: 'Inter', sans-serif;
+}
+div {
+    cursor: pointer;
+    width: fit-content;
+    padding: 7px;
+    border-radius: 5px;
+    margin: 5px 0 5px 0;
+    background-color: #1c1c25;
+}
+#qrcode {
+    padding: 20px;
+    background-color: white;
+    width: fit-content;
+    border-radius: 5%;
+}
+
+input[type=number] {
+    background: transparent;
+    border: none;
+    outline: none;
+}
+input[type=number]:focus {
+    background: transparent;
+    border: none;
+    outline: none;
+}
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox */
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.timer-cont {
+    background-color: #272730;
+    width: 100%;
+    display: flex; /* better with grid */
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-around;
+}
+.timer {
+
+}
+.timer .counter {
+    font-weight: bold;
+    font-size: 80px;
+}
+.timer input {
+    width: 50px;
+    font-size: 20px;
+    background-color: #272730;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+}

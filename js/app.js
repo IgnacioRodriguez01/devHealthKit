@@ -1,15 +1,18 @@
-const title = document.querySelector('title');
-const fav = document.querySelector('head > link:nth-child(4)');
 const on = document.querySelector('#on');
 const off = document.querySelector('#off');
 const onfav = document.querySelector('#onfav');
 const offfav = document.querySelector('#offfav');
+
+const title = document.querySelector('title');
+const fav = document.querySelector('head > link:nth-child(4)');
+const mask = document.querySelector(".mask");
+
+/* Title/favicon animation */
 text = "Check your posture!"
 let textArr = [];
 let index = 0;
 let interval, intervalfav;
 
-/* Title/favicon animation */
 on.addEventListener('click', () => {
     interval = setInterval(() => {
         if (textArr.length == 0) {
@@ -43,7 +46,7 @@ offfav.addEventListener('click', () => {
 })
 
 /* Autoplay */
-/* Make sound effect choosable (p´rovide some defaults), 
+/* Make sound effect choosable (provide some defaults), 
 with custom repeat and volume? */
 var x = document.getElementById("myAudio");
 
@@ -68,8 +71,35 @@ function runAutoplay() {
 //https://www.freecodecamp.org/news/how-to-become-a-better-developer-and-live-a-happier-life/
 //https://medium.com/geekculture/few-ways-to-generate-qr-code-using-javascript-54b6b5220c4f
 
+/* Popup */
+function createPopup(id) {
+    const popup = {"id": id};
+
+    popup.el = document.querySelector(`#${id}`);
+    const close = document.querySelector(`#${id} .popup-close`)
+    //generate the popup, and toggle it in the mask (remove and generate otg, or leave the html?)
+    popup.open = () => {
+        popup.el.classList.remove('hidden');
+        mask.classList.remove('hidden');
+    }
+    popup.close = () => {
+        popup.el.classList.add('hidden');
+        mask.classList.add('hidden');
+    }
+    close.onclick = () => popup.close();
+
+    return popup;
+}
+
+/* Popups intitialize */
+const settingsPopup = createPopup('popup-settings');
+const qrPopup = createPopup('popup-qr');
+const duckPopup = createPopup('popup-duck');
+const tasksPopup = createPopup('popup-tasks');
+
 /* QR */
 function qrSync() {
+    qrPopup.open();
     let queryStr = "?"
 
     const arr = Object.entries(timers)
@@ -78,13 +108,13 @@ function qrSync() {
         queryStr += `m${timer[0]}=${timer[1].min}&s${timer[0]}=${timer[1].sec}`
     })
      
-    const qrCont = document.getElementById("qrcode")
+    const qrCont = document.getElementById("qrcode");
     qrCont.textContent = '';
 
     var qrcode = new QRCode(qrCont, {
         text: "http://192.168.0.18:5500/" + queryStr,
-        width: 256,
-        height: 256,
+        width: 320,
+        height: 320,
         colorDark : "#000000",
         colorLight : "#ffffff",
         correctLevel : QRCode.CorrectLevel.M
@@ -97,6 +127,8 @@ function readParams() {
     const params = Object.fromEntries(urlSearchParams.entries());
     if(Object.keys(params).length != 0) {
         alert(JSON.stringify(params));
+        localStorage.setItem("settings", JSON.stringify(params))
+        window.location.href = '/'
     }
 }
 readParams();
@@ -132,7 +164,7 @@ function notificate() {
 /* Timers */
 /* evaluate the sync */
 let timers = {};
-
+/*
 function createTimer(timer) {
     let timerEl = document.querySelector(`#${timer} .counter`);
     obj = {current: "stop", paused: false, "timerEl": timerEl}
@@ -231,3 +263,4 @@ timersEl.forEach((timer)=>{
     timers[timer.id].update(timer.id);
 })
 
+*/
