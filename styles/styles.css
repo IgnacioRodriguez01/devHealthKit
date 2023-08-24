@@ -166,7 +166,7 @@ nav {
     gap: 3.25rem;
 }
 
-.timer {
+.tool {
     background: var(--tool-bg);
     position: relative;
     width: 300px;
@@ -198,26 +198,38 @@ nav {
     transition: 0.2s ease;
 }
 
-.start,
+.start {
+    background: url("/img/play.svg");
+}
 .add {
-    margin: auto 0 0 auto;
-    transition: 0.2s ease;
+    background: url("/img/plus-lg.svg");
+}
+.pause {
+    background: url("/img/pause.svg");
+}
+.stop {
+    background: url("/img/stop.svg");
 }
 
-.start:hover,
-.add:hover,
+.control:hover,
 .sync:hover,
 .settings:hover,
 nav p:hover {
     filter: brightness(0.8);
 }
-
-.start:active,
-.add:active,
+.control:active,
 .sync:active,
 .settings:active,
 nav p:active {
     transform: scale(0.9);
+}
+
+.control {
+    background-repeat: no-repeat;
+    background-position: center;
+    transition: 0.2s ease;
+    min-height: 24px;
+    min-width: 24px;
 }
 
 #timeradd {

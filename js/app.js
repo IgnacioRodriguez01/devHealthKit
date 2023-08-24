@@ -102,10 +102,11 @@ function qrSync() {
     qrPopup.open();
     let queryStr = "?"
 
-    const arr = Object.entries(timers)
+    const arr = Object.entries(settings.data)
+    console.log(arr)
     arr.forEach((timer, i)=>{
         if(i != 0) queryStr += "&";
-        queryStr += `m${timer[0]}=${timer[1].min}&s${timer[0]}=${timer[1].sec}`
+        queryStr += `${timer[0]}=${JSON.stringify(timer[1])}`
     })
      
     const qrCont = document.getElementById("qrcode");
@@ -119,12 +120,17 @@ function qrSync() {
         colorLight : "#ffffff",
         correctLevel : QRCode.CorrectLevel.M
     });
+
 }
 
 
 function readParams() {
     const urlSearchParams = new URLSearchParams(window.location.search);
     const params = Object.fromEntries(urlSearchParams.entries());
+    for (key of Object.keys(params)) {
+        params[key] = JSON.parse(params[key]);
+    }
+
     if(Object.keys(params).length != 0) {
         alert(JSON.stringify(params));
         localStorage.setItem("settings", JSON.stringify(params))
@@ -161,106 +167,159 @@ function notificate() {
     alert("Activa las notificaciones")
 }) */
 
+/* Settings */
+
+const settings = {
+    load: () => {},
+    save: () => {},
+    read: () => {},
+    data: {
+        pomo: {f:25,sb:5,lb:15},
+        post: {emin:0,esec:5},
+        eye: {"20r":true,emin:15,esec:0},
+        actbr: {ehr:1,emin:0,esec:0,fmin:5,fsec:0},
+        tasks: {today:[],allt:[]} 
+    },
+}
+
+let timersSettings = settings.data;
+
 /* Timers */
 /* evaluate the sync */
 let timers = {};
-/*
+
+
 function createTimer(timer) {
     let timerEl = document.querySelector(`#${timer} .counter`);
-    obj = {current: "stop", paused: false, "timerEl": timerEl}
+    let timerCtrl = document.querySelectorAll(`#${timer} .control`);
+    obj = {current: "stop", paused: false, repeat: true, "timerEl": timerEl, "timerCtrl": timerCtrl}
     
-    obj.start = () => {
+    obj.start = (timer) => {
         let dateOff, dif;
         
         if(timers[timer].paused && !isNaN(timers[timer].current)) {
             dif = timers[timer].current;
         } else {
-            dif = timers[timer].min*60000 + timers[timer].sec*1000; //Convert to ms
+            dif = timers[timer].min*60000 + timers[timer].sec*1000 + 1000; //Convert to ms
+            if('hr' in timers[timer]) {dif += timers[timer].hr*3600000}
         }
         timers[timer].paused = false;
-        //change to pause icon
 
         dateOff = new Date(Date.now() + dif)
         if(timers[timer].interval) {
             clearInterval(timers[timer].interval)
         }
-        timers[timer].interval = setInterval(() => obj.step(dateOff, timer), 950);
+        timers[timer].interval = setInterval(() => obj.step(dateOff, timer), 500);
+        timers[timer].current = "start"; //temporary state for updateControl
+        updateControl(timer);
     }
     obj.step = (dateOff, timer) => { //timer arg needed bc of DOM manipulation
         const timeLeft = (dateOff.getTime() - Date.now());
         const sec = Math.floor(timeLeft/1000%60)
         const min = Math.floor(timeLeft/60000%60)
+        const hr = Math.floor(timeLeft/3600000%60)
 
-        if(sec <= 0 && min <= 0) {
-            obj.stop();
+        if(sec < 0 && min < 0 && hr < 0) {
+            obj.stop(timer);
+            if(obj.repeat) {
+                //await callback? or better in stop?
+                obj.start(timer);
+            }
             return;
         }
         
+        const hrtxt = hr;
         const mintxt = min.toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping: false});
         const sectxt = sec.toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping: false});
-        timers[timer].timerEl.textContent = `${mintxt}:${sectxt}`;
+        timers[timer].timerEl.textContent = hr > 0 ? `${hrtxt}:${mintxt}:${sectxt}` : `${mintxt}:${sectxt}`;
 
         timers[timer].current = timeLeft;
     }
-    obj.stop = () => {
+    obj.stop = (timer) => {
         clearInterval(timers[timer].interval);
         timers[timer].current = "stop";
         timers[timer].paused = false;
-        //change to play icon
         obj.update(timer);
+        updateControl(timer);
     }
-    obj.pause = () => {
+    obj.pause = (timer) => {
         clearInterval(timers[timer].interval);
         timers[timer].paused = true;
-        //change to play icon
+        updateControl(timer);
     }
     obj.update = (timer) => {
         if(timers[timer].current !== "stop") return;
-
-        const inputMin = document.querySelector(`#${timer} .min`);
-        const inputSec = document.querySelector(`#${timer} .sec`);
-        timers[timer].min = inputMin.valueAsNumber;
-        timers[timer].sec = inputSec.valueAsNumber;
-        const mintxt = inputMin.valueAsNumber.toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping: false})
-        const sectxt = inputSec.valueAsNumber.toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping: false})
-        timers[timer].timerEl.textContent = `${mintxt}:${sectxt}`;
+        
+        if(timer == 'pomo') {
+            timers[timer].min = timersSettings[timer].f;
+            timers[timer].sec = 0;
+        }
+        if('emin' in timersSettings[timer] && 'esec' in timersSettings[timer]) {
+            timers[timer].min = timersSettings[timer].emin;
+            timers[timer].sec = timersSettings[timer].esec;
+        }
+        if('ehr' in timersSettings[timer]) {
+            timers[timer].hr = timersSettings[timer].ehr;
+        }
+        
+        const hrtxt = timers[timer].hr;
+        const mintxt = timers[timer].min.toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping: false})
+        const sectxt = timers[timer].sec.toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping: false})
+        timers[timer].timerEl.textContent = "hr" in timers[timer] ? `${hrtxt}:${mintxt}:${sectxt}` : `${mintxt}:${sectxt}`;
     }
 
     timers[timer] = obj;
     return obj;
 }
 
-//https://codepen.io/jaycurren/details/WNJZjxL
+function setChain(...args) {
 
-//play: paused || .current == stop
-//pause: !paused || .current != stop
-//sync:   
+}
 
-const timersEl = document.querySelectorAll(".timer");
+const timersEl = document.querySelectorAll(".timer"); //dom not related directly with timers
 timersEl.forEach((timer)=>{
     createTimer(timer.id);
 
     timer.addEventListener("click", (e) => {
-        switch (e.target.className) {
-            case "start":
-                console.log(timer.id)
-                timers[timer.id].start();
-                break;
-            case "stop":
-                timers[timer.id].stop();
-                break;
-            case "pause":
-                timers[timer.id].pause();
-                break;
-        
-            default:
-                break;
+
+        if (e.target.classList.contains("start")) {
+            console.log(timer.id)
+            timers[timer.id].start(timer.id);
+
+        } else if (e.target.classList.contains("stop")) {
+            timers[timer.id].stop(timer.id);
+
+        } else if (e.target.classList.contains("pause")) {
+            timers[timer.id].pause(timer.id);
         }
-        console.log(timers)
     })
 
     timer.addEventListener("change", () => timers[timer.id].update(timer.id));
     timers[timer.id].update(timer.id);
 })
 
-*/
+function updateControl(timer, start) {
+    const playCtrl = timers[timer].timerCtrl[0].classList;
+    const stopCtrl = timers[timer].timerCtrl[1].classList; //be AWARE of the order in DOM
+
+    if (timers[timer].current === "start") {
+        playCtrl.remove("start");
+        playCtrl.add("pause");
+        stopCtrl.remove("hidden");
+    }
+    if(timers[timer].current === "stop") {
+        stopCtrl.add("hidden");
+        playCtrl.remove("pause");
+        playCtrl.add("start");
+    }
+    if(timers[timer].current !== "stop" && !timers[timer].paused) {
+        playCtrl.remove("start");
+        playCtrl.add("pause");
+        stopCtrl.remove("hidden")
+    }
+    if(timers[timer].current !== "stop" && timers[timer].paused) {
+        playCtrl.remove("pause");
+        playCtrl.add("start");
+        stopCtrl.remove("hidden")
+    }
+}
